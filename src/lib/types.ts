@@ -18,6 +18,8 @@ export interface Transaction {
   user_id: string
   category_id?: string | null
   amount: number
+  quantity: number
+  price?: number | null
   type: TransactionType
   description: string
   date: string

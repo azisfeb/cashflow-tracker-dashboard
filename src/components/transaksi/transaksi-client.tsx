@@ -49,14 +49,49 @@ function formatDate(dateStr: string) {
   })
 }
 
+/** Format a local Date as YYYY-MM-DD without UTC conversion */
+function toLocalDateStr(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/**
+ * Returns the default billing/gajian period: 27th → 26th.
+ * - If today is the 27th or later, the current cycle is: 27th this month → 26th next month.
+ * - Otherwise: 27th last month → 26th this month.
+ */
+function getDefaultDateRange() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() // 0-indexed
+
+  let from: Date, to: Date
+  if (now.getDate() >= 27) {
+    // current cycle has started: 27th this month → 26th next month
+    from = new Date(year, month, 27)
+    to = new Date(year, month + 1, 26)
+  } else {
+    // still in previous cycle: 27th last month → 26th this month
+    from = new Date(year, month - 1, 27)
+    to = new Date(year, month, 26)
+  }
+  return { from: toLocalDateStr(from), to: toLocalDateStr(to) }
+}
+
 const SOURCE_LABELS: Record<string, string> = {
   manual: 'Manual',
   import: 'Impor',
   telegram: 'Telegram',
 }
 
+const defaultRange = getDefaultDateRange()
+
 const emptyForm = {
   type: 'expense' as 'income' | 'expense',
+  quantity: '1',
+  price: '',
   amount: '',
   description: '',
   date: new Date().toISOString().split('T')[0],
@@ -78,16 +113,34 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all')
   const [filterCategory, setFilterCategory] = useState<string>('all')
+  const [dateFrom, setDateFrom] = useState(defaultRange.from)
+  const [dateTo, setDateTo] = useState(defaultRange.to)
   const supabase = createClient()
+
+  function handlePriceChange(price: string) {
+    const qty = parseInt(form.quantity, 10) || 1
+    const p = parseFloat(price)
+    const computed = !isNaN(p) && p > 0 ? (Math.round(qty * p * 100) / 100).toFixed(2) : ''
+    setForm(f => ({ ...f, price, amount: computed }))
+  }
+
+  function handleQuantityChange(quantity: string) {
+    const qty = parseInt(quantity, 10) || 1
+    const p = parseFloat(form.price)
+    const computed = !isNaN(p) && p > 0 ? (Math.round(qty * p * 100) / 100).toFixed(2) : form.amount
+    setForm(f => ({ ...f, quantity, amount: computed }))
+  }
 
   const filtered = useMemo(() => {
     return transactions.filter(t => {
       if (filterType !== 'all' && t.type !== filterType) return false
       if (filterCategory !== 'all' && t.category_id !== filterCategory) return false
       if (search && !t.description.toLowerCase().includes(search.toLowerCase())) return false
+      if (dateFrom && t.date < dateFrom) return false
+      if (dateTo && t.date > dateTo) return false
       return true
     })
-  }, [transactions, filterType, filterCategory, search])
+  }, [transactions, filterType, filterCategory, search, dateFrom, dateTo])
 
   function openCreate() {
     setEditingId(null)
@@ -99,6 +152,8 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
     setEditingId(t.id)
     setForm({
       type: t.type,
+      quantity: String(t.quantity ?? 1),
+      price: t.price != null ? String(t.price) : '',
       amount: String(t.amount),
       description: t.description,
       date: t.date,
@@ -113,6 +168,18 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
       toast.error('Jumlah tidak valid')
       return
     }
+    const quantity = parseInt(form.quantity, 10) || 1
+    const price = form.price ? parseFloat(form.price) : null
+
+    if (quantity < 1) {
+      toast.error('Qty harus minimal 1')
+      return
+    }
+    if (price !== null && price <= 0) {
+      toast.error('Harga satuan tidak valid')
+      return
+    }
+
     setLoading(true)
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -121,6 +188,8 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
     const basePayload = {
       type: form.type,
       amount,
+      quantity,
+      price: price ?? null,
       description: form.description,
       date: form.date,
       category_id: form.category_id || null,
@@ -167,44 +236,79 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
 
   const filteredCategories = categories.filter(c => filterType === 'all' || c.type === filterType)
   const formCategories = categories.filter(c => c.type === form.type)
+  const priceIsSet = parseFloat(form.price) > 0
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Cari transaksi..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      {/* Filters */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cari transaksi..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={filterType} onValueChange={(v) => { setFilterType(v as typeof filterType); setFilterCategory('all') }}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Tipe</SelectItem>
+              <SelectItem value="income">Pemasukan</SelectItem>
+              <SelectItem value="expense">Pengeluaran</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v ?? 'all')}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Semua Kategori" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Kategori</SelectItem>
+              {filteredCategories.map(c => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={openCreate} className="shrink-0">
+            <Plus className="h-4 w-4 mr-2" />
+            Tambah
+          </Button>
         </div>
-        <Select value={filterType} onValueChange={(v) => { setFilterType(v as typeof filterType); setFilterCategory('all') }}>
-          <SelectTrigger className="w-full sm:w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Tipe</SelectItem>
-            <SelectItem value="income">Pemasukan</SelectItem>
-            <SelectItem value="expense">Pengeluaran</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v ?? 'all')}>
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder="Semua Kategori" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Kategori</SelectItem>
-            {filteredCategories.map(c => (
-              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button onClick={openCreate} className="shrink-0">
-          <Plus className="h-4 w-4 mr-2" />
-          Tambah
-        </Button>
+
+        {/* Date range filter */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+          <span className="text-muted-foreground shrink-0">Periode:</span>
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="w-40 h-8 text-sm"
+            />
+            <span className="text-muted-foreground">—</span>
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              className="w-40 h-8 text-sm"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs text-muted-foreground"
+              onClick={() => { setDateFrom(defaultRange.from); setDateTo(defaultRange.to) }}
+            >
+              Reset
+            </Button>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {filtered.length} transaksi
+          </span>
+        </div>
       </div>
 
       <Card>
@@ -217,6 +321,7 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
                   <TableHead>Deskripsi</TableHead>
                   <TableHead>Kategori</TableHead>
                   <TableHead>Tipe</TableHead>
+                  <TableHead className="text-right">Qty × Harga</TableHead>
                   <TableHead className="text-right">Jumlah</TableHead>
                   <TableHead className="text-right">Sumber</TableHead>
                   <TableHead />
@@ -225,7 +330,7 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
               <TableBody>
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-12">
                       Tidak ada transaksi
                     </TableCell>
                   </TableRow>
@@ -254,6 +359,12 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
                         }
                         {t.type === 'income' ? 'Masuk' : 'Keluar'}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-right text-xs text-muted-foreground">
+                      {t.price != null
+                        ? <span>{t.quantity ?? 1} × {formatRupiah(t.price)}</span>
+                        : <span>—</span>
+                      }
                     </TableCell>
                     <TableCell className={`text-right text-sm font-semibold ${t.type === 'income' ? 'text-green-500' : 'text-red-400'}`}>
                       {t.type === 'expense' ? '-' : '+'}{formatRupiah(t.amount)}
@@ -296,16 +407,48 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Quantity + Price side by side */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Qty</Label>
+                <Input
+                  type="number"
+                  placeholder="1"
+                  value={form.quantity}
+                  onChange={e => handleQuantityChange(e.target.value)}
+                  min={1}
+                  step={1}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Harga Satuan (Rp) <span className="text-muted-foreground font-normal">opsional</span></Label>
+                <Input
+                  type="number"
+                  placeholder="50000"
+                  value={form.price}
+                  onChange={e => handlePriceChange(e.target.value)}
+                  min={0}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label>Jumlah (Rp)</Label>
+              <Label>
+                Jumlah (Rp)
+                {priceIsSet && <span className="text-xs text-muted-foreground font-normal ml-1">(dihitung otomatis)</span>}
+              </Label>
               <Input
                 type="number"
                 placeholder="50000"
                 value={form.amount}
-                onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                onChange={e => !priceIsSet && setForm(f => ({ ...f, amount: e.target.value }))}
+                readOnly={priceIsSet}
+                className={priceIsSet ? 'bg-muted cursor-not-allowed' : ''}
                 min={0}
               />
             </div>
+
             <div className="space-y-2">
               <Label>Deskripsi</Label>
               <Input
@@ -359,3 +502,4 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
     </div>
   )
 }
+
