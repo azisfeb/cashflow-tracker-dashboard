@@ -1,4 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cashflow Tracker Dashboard
+
+Dashboard manajemen keuangan pribadi untuk mencatat pemasukan dan pengeluaran.
+
+## Stack
+
+- **Next.js 15** (App Router)
+- **shadcn/ui** + **Tailwind CSS v4**
+- **Supabase** (Auth + PostgreSQL)
+- **Recharts** (grafik)
+- **papaparse** (parsing CSV)
+- **ExcelJS** (parsing XLSX)
+
+## Setup
+
+### 1. Clone & Install
+
+```bash
+npm install
+```
+
+### 2. Konfigurasi Supabase
+
+Salin `.env.local.example` menjadi `.env.local`:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Isi dengan URL dan anon key dari project Supabase kamu.
+
+### 3. Jalankan Migrasi Database
+
+Di Supabase Dashboard → SQL Editor, jalankan isi file:
+
+```
+supabase/migrations/001_initial.sql
+```
+
+### 4. Jalankan Aplikasi
+
+```bash
+npm run dev
+```
+
+## Fitur
+
+- 🔐 **Autentikasi** — Login email/password via Supabase Auth
+- 📊 **Dashboard** — Ringkasan pemasukan, pengeluaran, saldo, dan grafik bulanan
+- 💸 **Transaksi** — Catat, edit, hapus transaksi dengan filter dan pencarian
+- 🏷️ **Kategori** — Kelola kategori dengan warna custom
+- 📥 **Impor** — Import dari file CSV atau XLSX (export Google Sheets)
+
+## Persiapan Telegram Bot (Fase Berikutnya)
+
+Schema database sudah memiliki field `source` (manual/import/telegram) dan `telegram_message_id` 
+pada tabel `transactions`. Endpoint `/api/telegram/webhook` sudah tersedia (mengembalikan 501).
+
+Untuk mengaktifkan, ganti handler di `src/app/api/telegram/webhook/route.ts`.
+
 
 ## Getting Started
 
