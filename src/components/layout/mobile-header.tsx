@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { ThemeToggle } from '@/components/layout/theme-toggle'
 import { 
   LayoutDashboard, 
   ArrowLeftRight, 
@@ -49,15 +50,17 @@ export function MobileHeader({ user }: { user: User }) {
         <span className="text-lg">💰</span>
         <span className="font-semibold text-sm">{currentPage}</span>
       </div>
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger
-          render={
-            <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
-            </Button>
-          }
-        />
-        <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border">
+      <div className="flex items-center gap-1">
+        <ThemeToggle />
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger
+            render={
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            }
+          />
+          <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border">
           <div className="p-6 border-b border-sidebar-border">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/20">
@@ -99,7 +102,8 @@ export function MobileHeader({ user }: { user: User }) {
             </Button>
           </div>
         </SheetContent>
-      </Sheet>
+        </Sheet>
+      </div>
     </header>
   )
 }
