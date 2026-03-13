@@ -33,6 +33,8 @@ interface MappedRow {
   date: string
   description: string
   amount: number
+  quantity: number
+  price?: number
   type: 'income' | 'expense'
   category_id?: string
   valid: boolean
@@ -44,7 +46,7 @@ interface Props {
   importLogs: ImportLog[]
 }
 
-const emptyMapping = { date: '', description: '', amount: '', type: '', category: '' }
+const emptyMapping = { date: '', description: '', amount: '', type: '', category: '', qty: '', harga: '' }
 
 export function ImporClient({ categories, importLogs: initialLogs }: Props) {
   const [logs, setLogs] = useState(initialLogs)
@@ -118,8 +120,30 @@ export function ImporClient({ categories, importLogs: initialLogs }: Props) {
       const descVal = mapping.description ? row[mapping.description] : ''
       const amountVal = mapping.amount ? row[mapping.amount] : ''
       const typeVal = mapping.type ? row[mapping.type]?.toLowerCase() : ''
+      const qtyVal = mapping.qty ? row[mapping.qty] : ''
+      const hargaVal = mapping.harga ? row[mapping.harga] : ''
 
-      const amount = parseFloat(amountVal?.replace(/[^0-9.-]/g, '') ?? '')
+      // Validate quantity only when a qty column is explicitly mapped
+      let quantity = 1
+      let qtyError: string | undefined
+      if (mapping.qty && qtyVal) {
+        const parsed = parseInt(qtyVal.replace(/[^0-9]/g, ''), 10)
+        if (!parsed || parsed < 1 || !/^\d+$/.test(qtyVal.trim())) {
+          qtyError = 'Qty tidak valid'
+        } else {
+          quantity = parsed
+        }
+      }
+
+      const price = hargaVal ? parseFloat(hargaVal.replace(/[^0-9.-]/g, '')) : undefined
+
+      // If price is provided, derive amount from qty × price; else parse amount column directly
+      let amount: number
+      if (price && !isNaN(price) && price > 0) {
+        amount = Math.round(quantity * price * 100) / 100
+      } else {
+        amount = parseFloat(amountVal?.replace(/[^0-9.-]/g, '') ?? '')
+      }
 
       let type: 'income' | 'expense' = 'expense'
       if (typeVal?.includes('masuk') || typeVal?.includes('income') || typeVal?.includes('pemasukan') || typeVal === 'in') {
@@ -140,10 +164,12 @@ export function ImporClient({ categories, importLogs: initialLogs }: Props) {
         date: dateVal || new Date().toISOString().split('T')[0],
         description: descVal || '',
         amount: isValidAmount ? Math.abs(amount) : 0,
+        quantity,
+        price: price && !isNaN(price) && price > 0 ? price : undefined,
         type,
         category_id: matchedCategory?.id,
-        valid: isValidDate && isValidAmount,
-        error: !isValidDate ? 'Tanggal tidak valid' : !isValidAmount ? 'Jumlah tidak valid' : undefined,
+        valid: isValidDate && isValidAmount && !qtyError,
+        error: qtyError ?? (!isValidDate ? 'Tanggal tidak valid' : !isValidAmount ? 'Jumlah tidak valid' : undefined),
       }
     }
 
@@ -168,6 +194,8 @@ export function ImporClient({ categories, importLogs: initialLogs }: Props) {
     const inserts = validRows.map(r => ({
       user_id: user.id,
       amount: r.amount,
+      quantity: r.quantity,
+      price: r.price ?? null,
       type: r.type,
       description: r.description,
       date: r.date,
@@ -268,6 +296,8 @@ export function ImporClient({ categories, importLogs: initialLogs }: Props) {
                 ['description', 'Deskripsi'],
                 ['type', 'Tipe (income/expense)'],
                 ['category', 'Kategori'],
+                ['qty', 'Qty (opsional)'],
+                ['harga', 'Harga Satuan (opsional)'],
               ] as [keyof typeof mapping, string][]).map(([key, label]) => (
                 <div key={key} className="space-y-1.5">
                   <label className="text-sm font-medium">{label}</label>
@@ -290,7 +320,7 @@ export function ImporClient({ categories, importLogs: initialLogs }: Props) {
             </div>
             <div className="flex gap-3 pt-2">
               <Button variant="outline" onClick={reset}>Batalkan</Button>
-              <Button onClick={buildMappedRows} disabled={!mapping.date || !mapping.amount}>
+              <Button onClick={buildMappedRows} disabled={!mapping.date || (!mapping.amount && !mapping.harga)}>
                 Pratinjau Data
               </Button>
             </div>

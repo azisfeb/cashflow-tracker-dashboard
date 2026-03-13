@@ -1,6 +1,7 @@
-tanggal,deskripsi,jumlah,tipe,kategori
-2024-01-15,Gaji Bulanan,5000000,income,Salary
-2024-01-16,Freelance Project,2000000,income,Freelance
-2024-01-17,Makan Siang,50000,expense,Makanan & Minuman
-2024-01-18,Tagihan Listrik,300000,expense,Tagihan
-2024-01-19,Transport Ojek,25000,expense,Transportasi
+tanggal,deskripsi,jumlah,tipe,kategori,qty,harga
+2024-01-15,Gaji Bulanan,5000000,income,Salary,,
+2024-01-16,Freelance Project,2000000,income,Freelance,,
+2024-01-17,Makan Siang,,expense,Makanan & Minuman,2,25000
+2024-01-18,Tagihan Listrik,300000,expense,Tagihan,,
+2024-01-19,Transport Ojek,,expense,Transportasi,1,25000
+2024-01-20,Buah Apel,,expense,Buah,3,15000
