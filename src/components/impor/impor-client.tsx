@@ -21,7 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { toast } from 'sonner'
-import { Upload, FileSpreadsheet, CheckCircle2, XCircle, Loader2, AlertCircle } from 'lucide-react'
+import { Upload, FileSpreadsheet, CheckCircle2, XCircle, Loader2, AlertCircle, Download } from 'lucide-react'
 import Papa from 'papaparse'
 import type { Category, ImportLog } from '@/lib/types'
 
@@ -224,6 +224,14 @@ export function ImporClient({ categories, importLogs: initialLogs }: Props) {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="flex justify-end mb-3">
+              <a href="/template-impor.csv" download>
+                <Button variant="outline" size="sm" type="button">
+                  <Download className="h-4 w-4 mr-2" />
+                  Unduh Template CSV
+                </Button>
+              </a>
+            </div>
             <div
               onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed border-border rounded-xl p-12 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
