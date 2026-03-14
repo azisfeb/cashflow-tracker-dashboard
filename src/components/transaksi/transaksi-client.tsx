@@ -397,7 +397,7 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="flex-1 space-y-1.5 overflow-hidden">
-                    {categoryChartData
+                    {[...categoryChartData]
                       .sort((a, b) => b.expense - a.expense)
                       .slice(0, 8)
                       .map((d, i) => {
