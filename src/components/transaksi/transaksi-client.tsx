@@ -30,8 +30,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Loader2, Search, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import type { Transaction, Category } from '@/lib/types'
+import {
+  PieChart, Pie, Cell, Tooltip as RechartsTooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
+} from 'recharts'
 
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat('id-ID', {
@@ -238,6 +242,39 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
   const formCategories = categories.filter(c => c.type === form.type)
   const priceIsSet = parseFloat(form.price) > 0
 
+  const summary = useMemo(() => {
+    const income = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+    const expense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+    return { income, expense, balance: income - expense }
+  }, [filtered])
+
+  const categoryChartData = useMemo(() => {
+    const map = new Map<string, { name: string; color: string; expense: number }>()
+    for (const t of filtered) {
+      if (t.type !== 'expense') continue
+      const key = t.category_id ?? '__none__'
+      const label = t.categories?.name ?? 'Tanpa Kategori'
+      const color = t.categories?.color ?? '#888888'
+      if (!map.has(key)) map.set(key, { name: label, color, expense: 0 })
+      map.get(key)!.expense += t.amount
+    }
+    return Array.from(map.values()).filter(d => d.expense > 0)
+  }, [filtered])
+
+  const dailyExpenseData = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const t of filtered) {
+      if (t.type !== 'expense') continue
+      map.set(t.date, (map.get(t.date) ?? 0) + t.amount)
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, amount]) => ({
+        date: new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+        amount,
+      }))
+  }, [filtered])
+
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -310,6 +347,149 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
           </span>
         </div>
       </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-500/10">
+              <TrendingUp className="h-4 w-4 text-green-500" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Pemasukan</p>
+              <p className="text-sm font-semibold text-green-500">{formatRupiah(summary.income)}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-red-500/10">
+              <TrendingDown className="h-4 w-4 text-red-400" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Pengeluaran</p>
+              <p className="text-sm font-semibold text-red-400">{formatRupiah(summary.expense)}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${summary.balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+              <Minus className={`h-4 w-4 ${summary.balance >= 0 ? 'text-green-500' : 'text-red-400'}`} />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Selisih</p>
+              <p className={`text-sm font-semibold ${summary.balance >= 0 ? 'text-green-500' : 'text-red-400'}`}>
+                {summary.balance >= 0 ? '+' : ''}{formatRupiah(summary.balance)}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts */}
+      {filtered.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Category breakdown */}
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm font-medium mb-3">Komposisi per Kategori</p>
+              {categoryChartData.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-8">Tidak ada data</p>
+              ) : (
+                <div className="flex gap-4 items-center">
+                  <ResponsiveContainer width={160} height={160}>
+                    <PieChart>
+                      <Pie
+                        data={categoryChartData}
+                        dataKey="expense"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={75}
+                        paddingAngle={2}
+                      >
+                        {categoryChartData.map((entry, i) => (
+                          <Cell key={i} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip
+                        formatter={(value, _name, props) => [formatRupiah(Number(value ?? 0)), props.payload?.name ?? '']}
+                        contentStyle={{
+                          backgroundColor: 'oklch(0.115 0.025 172)',
+                          border: '1px solid oklch(0.24 0.04 172)',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                        }}
+                        labelStyle={{ color: 'oklch(0.87 0 0)' }}
+                        itemStyle={{ color: 'oklch(0.87 0 0)' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex-1 space-y-1.5 overflow-hidden">
+                    {categoryChartData
+                      .sort((a, b) => b.expense - a.expense)
+                      .slice(0, 8)
+                      .map((d, i) => {
+                        const grandTotal = categoryChartData.reduce((s, x) => s + x.expense, 0)
+                        const pct = grandTotal > 0 ? Math.round((d.expense / grandTotal) * 100) : 0
+                        return (
+                          <div key={i} className="flex items-center gap-2 text-xs">
+                            <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                            <span className="truncate flex-1 text-muted-foreground">{d.name}</span>
+                            <span className="font-medium shrink-0">{pct}%</span>
+                          </div>
+                        )
+                      })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Daily expense */}
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm font-medium mb-3">Pengeluaran Harian</p>
+              {dailyExpenseData.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-8">Tidak ada pengeluaran</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={160}>
+                  <BarChart data={dailyExpenseData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.24 0.04 172)" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10, fill: 'oklch(0.58 0.03 172)' }}
+                      axisLine={false}
+                      tickLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tickFormatter={(v: number) => v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}jt` : v >= 1_000 ? `${(v / 1_000).toFixed(0)}rb` : String(v)}
+                      tick={{ fontSize: 10, fill: 'oklch(0.58 0.03 172)' }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={44}
+                    />
+                    <RechartsTooltip
+                      formatter={(value) => [formatRupiah(Number(value ?? 0)), 'Pengeluaran']}
+                      contentStyle={{
+                        backgroundColor: 'oklch(0.115 0.025 172)',
+                        border: '1px solid oklch(0.24 0.04 172)',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                      }}
+                      labelStyle={{ color: 'oklch(0.87 0 0)' }}
+                      itemStyle={{ color: 'oklch(0.87 0 0)' }}
+                    />
+                    <Bar dataKey="amount" fill="oklch(0.577 0.245 27)" radius={[3, 3, 0, 0]} name="Pengeluaran" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-0">
