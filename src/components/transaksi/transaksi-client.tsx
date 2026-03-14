@@ -294,9 +294,9 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Tipe</SelectItem>
-              <SelectItem value="income">Pemasukan</SelectItem>
-              <SelectItem value="expense">Pengeluaran</SelectItem>
+              <SelectItem value="all" label="Semua Tipe">Semua Tipe</SelectItem>
+              <SelectItem value="income" label="Pemasukan">Pemasukan</SelectItem>
+              <SelectItem value="expense" label="Pengeluaran">Pengeluaran</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v ?? 'all')}>
@@ -304,9 +304,9 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
               <SelectValue placeholder="Semua Kategori" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Kategori</SelectItem>
+              <SelectItem value="all" label="Semua Kategori">Semua Kategori</SelectItem>
               {filteredCategories.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                <SelectItem key={c.id} value={c.id} label={c.name}>{c.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -572,25 +572,46 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
 
       {/* Create/Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editingId ? 'Edit Transaksi' : 'Tambah Transaksi'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Tipe</Label>
-              <Select value={form.type} onValueChange={(v) => setForm(f => ({ ...f, type: v as 'income' | 'expense', category_id: '' }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="income">Pemasukan</SelectItem>
-                  <SelectItem value="expense">Pengeluaran</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="space-y-3 py-1">
+            {/* Row 1: Tipe + Tanggal */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Tipe</Label>
+                <Select value={form.type} onValueChange={(v) => setForm(f => ({ ...f, type: v as 'income' | 'expense', category_id: '' }))}>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="income" label="Pemasukan">Pemasukan</SelectItem>
+                    <SelectItem value="expense" label="Pengeluaran">Pengeluaran</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Tanggal</Label>
+                <Input
+                  type="date"
+                  value={form.date}
+                  onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                />
+              </div>
             </div>
 
-            {/* Quantity + Price side by side */}
+            {/* Deskripsi */}
+            <div className="space-y-1.5">
+              <Label>Deskripsi</Label>
+              <Input
+                placeholder="Makan siang, Gaji, dll"
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              />
+            </div>
+
+            {/* Row 2: Qty + Harga Satuan */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Qty</Label>
                 <Input
                   type="number"
@@ -601,8 +622,11 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
                   step={1}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Harga Satuan (Rp) <span className="text-muted-foreground font-normal">opsional</span></Label>
+              <div className="space-y-1.5">
+                <Label>
+                  Harga Satuan{' '}
+                  <span className="text-muted-foreground font-normal text-xs">opsional</span>
+                </Label>
                 <Input
                   type="number"
                   placeholder="50000"
@@ -613,10 +637,13 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>
+            {/* Jumlah */}
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
                 Jumlah (Rp)
-                {priceIsSet && <span className="text-xs text-muted-foreground font-normal ml-1">(dihitung otomatis)</span>}
+                {priceIsSet && (
+                  <span className="text-xs text-muted-foreground font-normal">· dihitung otomatis</span>
+                )}
               </Label>
               <Input
                 type="number"
@@ -629,30 +656,17 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Deskripsi</Label>
-              <Input
-                placeholder="Makan siang, Gaji, dll"
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Tanggal</Label>
-              <Input
-                type="date"
-                value={form.date}
-                onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
+            {/* Kategori */}
+            <div className="space-y-1.5">
               <Label>Kategori</Label>
               <Select value={form.category_id || 'none'} onValueChange={(v) => setForm(f => ({ ...f, category_id: (!v || v === 'none') ? '' : v }))}>
-                <SelectTrigger><SelectValue placeholder="Pilih kategori (opsional)" /></SelectTrigger>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Pilih kategori (opsional)" />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Tanpa Kategori</SelectItem>
+                  <SelectItem value="none" label="Tanpa Kategori">Tanpa Kategori</SelectItem>
                   {formCategories.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id} label={c.name}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
