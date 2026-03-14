@@ -32,6 +32,7 @@ import {
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Loader2, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import type { Transaction, Category } from '@/lib/types'
+import { getBillingPeriod } from '@/lib/billing-period'
 import {
   PieChart, Pie, Cell, Tooltip as RechartsTooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
@@ -53,44 +54,13 @@ function formatDate(dateStr: string) {
   })
 }
 
-/** Format a local Date as YYYY-MM-DD without UTC conversion */
-function toLocalDateStr(d: Date) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-/**
- * Returns the default billing/gajian period: 27th → 26th.
- * - If today is the 27th or later, the current cycle is: 27th this month → 26th next month.
- * - Otherwise: 27th last month → 26th this month.
- */
-function getDefaultDateRange() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() // 0-indexed
-
-  let from: Date, to: Date
-  if (now.getDate() >= 27) {
-    // current cycle has started: 27th this month → 26th next month
-    from = new Date(year, month, 27)
-    to = new Date(year, month + 1, 26)
-  } else {
-    // still in previous cycle: 27th last month → 26th this month
-    from = new Date(year, month - 1, 27)
-    to = new Date(year, month, 26)
-  }
-  return { from: toLocalDateStr(from), to: toLocalDateStr(to) }
-}
-
 const SOURCE_LABELS: Record<string, string> = {
   manual: 'Manual',
   import: 'Impor',
   telegram: 'Telegram',
 }
 
-const defaultRange = getDefaultDateRange()
+const defaultRange = getBillingPeriod()
 
 const emptyForm = {
   type: 'expense' as 'income' | 'expense',
@@ -349,7 +319,7 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-green-500/10">

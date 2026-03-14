@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MonthlyChart } from '@/components/dashboard/monthly-chart'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react'
+import { getBillingPeriod } from '@/lib/billing-period'
 
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat('id-ID', {
@@ -17,28 +18,39 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   const now = new Date()
-  const startOfYear = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
+  const billing = getBillingPeriod(now)
+
+  // Fetch broadly enough for both the billing-period stats AND the full-year chart.
+  // In January the billing period starts in December of the previous year,
+  // so we take whichever is earlier: Jan 1 of current year or billing.from.
+  const startOfYear = `${now.getFullYear()}-01-01`
+  const queryFrom = billing.from < startOfYear ? billing.from : startOfYear
 
   const { data: transactions } = await supabase
     .from('transactions')
     .select('amount, type, date, description, categories(name, color)')
     .eq('user_id', user!.id)
-    .gte('date', startOfYear)
+    .gte('date', queryFrom)
     .order('date', { ascending: false })
 
   const allTransactions = transactions ?? []
 
-  const totalIncome = allTransactions
+  // Stat cards: filtered to the current billing period
+  const billingTransactions = allTransactions.filter(
+    t => t.date >= billing.from && t.date <= billing.to
+  )
+
+  const totalIncome = billingTransactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + Number(t.amount), 0)
 
-  const totalExpense = allTransactions
+  const totalExpense = billingTransactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + Number(t.amount), 0)
 
   const balance = totalIncome - totalExpense
 
-  // Build monthly data for chart
+  // Monthly chart: full current year
   const monthlyMap = new Map<string, { income: number; expense: number }>()
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
 
@@ -70,7 +82,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">Ringkasan keuangan tahun {now.getFullYear()}</p>
+        <p className="text-muted-foreground text-sm mt-1">Periode {billing.label}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -83,7 +95,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-green-500">{formatRupiah(totalIncome)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Tahun {now.getFullYear()}</p>
+            <p className="text-xs text-muted-foreground mt-1">{billing.label}</p>
           </CardContent>
         </Card>
 
@@ -96,7 +108,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-red-500">{formatRupiah(totalExpense)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Tahun {now.getFullYear()}</p>
+            <p className="text-xs text-muted-foreground mt-1">{billing.label}</p>
           </CardContent>
         </Card>
 
@@ -111,7 +123,7 @@ export default async function DashboardPage() {
             <p className={`text-2xl font-bold ${balance >= 0 ? 'text-primary' : 'text-red-500'}`}>
               {formatRupiah(balance)}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">Pemasukan - Pengeluaran</p>
+            <p className="text-xs text-muted-foreground mt-1">Pemasukan − Pengeluaran</p>
           </CardContent>
         </Card>
       </div>
