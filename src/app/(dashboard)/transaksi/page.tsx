@@ -10,8 +10,7 @@ export default async function TransaksiPage() {
       .from('transactions')
       .select('*, categories(id, name, color, type)')
       .eq('user_id', user!.id)
-      .order('date', { ascending: false })
-      .limit(100),
+      .order('date', { ascending: false }),
     supabase
       .from('categories')
       .select('*')
