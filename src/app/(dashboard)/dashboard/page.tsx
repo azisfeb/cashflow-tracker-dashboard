@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MonthlyChart } from '@/components/dashboard/monthly-chart'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react'
-import { getBillingPeriod } from '@/lib/billing-period'
+import { getAnnualBillingRange, getBillingMonthIndex } from '@/lib/billing-period'
 
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat('id-ID', {
@@ -18,60 +18,47 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   const now = new Date()
-  const billing = getBillingPeriod(now)
+  const annual = getAnnualBillingRange(now.getFullYear())
 
-  // Fetch broadly enough for both the billing-period stats AND the full-year chart.
-  // In January the billing period starts in December of the previous year,
-  // so we take whichever is earlier: Jan 1 of current year or billing.from.
-  const startOfYear = `${now.getFullYear()}-01-01`
-  const queryFrom = billing.from < startOfYear ? billing.from : startOfYear
-
+  // Fetch all transactions within the annual billing cycle
   const { data: transactions } = await supabase
     .from('transactions')
     .select('amount, type, date, description, categories(name, color)')
     .eq('user_id', user!.id)
-    .gte('date', queryFrom)
+    .gte('date', annual.from)
+    .lte('date', annual.to)
     .order('date', { ascending: false })
 
   const allTransactions = transactions ?? []
 
-  // Stat cards: filtered to the current billing period
-  const billingTransactions = allTransactions.filter(
-    t => t.date >= billing.from && t.date <= billing.to
-  )
-
-  const totalIncome = billingTransactions
+  // Stat cards: totals for the full annual billing cycle
+  const totalIncome = allTransactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + Number(t.amount), 0)
 
-  const totalExpense = billingTransactions
+  const totalExpense = allTransactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + Number(t.amount), 0)
 
   const balance = totalIncome - totalExpense
 
-  // Monthly chart: full current year
-  const monthlyMap = new Map<string, { income: number; expense: number }>()
+  // Monthly chart: group by billing period (27th→26th), not calendar month
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-
-  for (let i = 0; i < 12; i++) {
-    const key = `${now.getFullYear()}-${String(i + 1).padStart(2, '0')}`
-    monthlyMap.set(key, { income: 0, expense: 0 })
-  }
+  const monthlyMap = new Map<number, { income: number; expense: number }>()
+  for (let m = 1; m <= 12; m++) monthlyMap.set(m, { income: 0, expense: 0 })
 
   allTransactions.forEach(t => {
-    const key = t.date.substring(0, 7)
-    const existing = monthlyMap.get(key)
-    if (existing) {
-      if (t.type === 'income') existing.income += Number(t.amount)
-      else existing.expense += Number(t.amount)
-    }
+    const m = getBillingMonthIndex(t.date, annual.year)
+    if (m === null) return
+    const entry = monthlyMap.get(m)!
+    if (t.type === 'income') entry.income += Number(t.amount)
+    else entry.expense += Number(t.amount)
   })
 
-  const chartData = Array.from(monthlyMap.entries()).map(([key, val]) => {
-    const monthIdx = parseInt(key.split('-')[1]) - 1
-    return { month: monthNames[monthIdx], ...val }
-  })
+  const chartData = Array.from(monthlyMap.entries()).map(([m, val]) => ({
+    month: monthNames[m - 1],
+    ...val,
+  }))
 
   const recentTransactions = allTransactions.slice(0, 5).map(t => ({
     ...t,
@@ -82,7 +69,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">Periode {billing.label}</p>
+        <p className="text-muted-foreground text-sm mt-1">Siklus tahunan {annual.label}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -95,7 +82,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-green-500">{formatRupiah(totalIncome)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{billing.label}</p>
+            <p className="text-xs text-muted-foreground mt-1">{annual.label}</p>
           </CardContent>
         </Card>
 
@@ -108,7 +95,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-red-500">{formatRupiah(totalExpense)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{billing.label}</p>
+            <p className="text-xs text-muted-foreground mt-1">{annual.label}</p>
           </CardContent>
         </Card>
 
