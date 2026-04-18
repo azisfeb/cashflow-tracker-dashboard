@@ -15,7 +15,8 @@ import {
   Tag, 
   Upload, 
   LogOut,
-  Menu
+  Menu,
+  PartyPopper
 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 import { toast } from 'sonner'
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/transaksi', label: 'Transaksi', icon: ArrowLeftRight },
   { href: '/kategori', label: 'Kategori', icon: Tag },
+  { href: '/event-spesial', label: 'Event Spesial', icon: PartyPopper },
   { href: '/impor', label: 'Impor', icon: Upload },
 ]
 
