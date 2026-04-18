@@ -171,9 +171,9 @@ export function EventDetailClient({ event, initialExpenses }: Props) {
         </Card>
       </div>
 
-      <div className="flex justify-between items-center pt-4 border-t border-border">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pt-4 border-t border-border">
         <h2 className="text-lg font-semibold">Daftar Pengeluaran</h2>
-        <Button onClick={openCreate}>
+        <Button onClick={openCreate} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Tambah Pengeluaran
         </Button>
@@ -188,22 +188,22 @@ export function EventDetailClient({ event, initialExpenses }: Props) {
               </div>
             )}
             {expenses.map((exp) => (
-              <div key={exp.id} className="p-4 flex items-center justify-between group hover:bg-muted/50 transition-colors">
-                <div>
-                  <p className="font-medium">{exp.name}</p>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+              <div key={exp.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group hover:bg-muted/50 transition-colors">
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <p className="font-medium leading-snug">{exp.name}</p>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     {exp.category && (
-                      <span className="bg-secondary px-2 py-0.5 rounded-full text-secondary-foreground">
+                      <span className="bg-secondary px-2 py-0.5 rounded-full text-secondary-foreground truncate max-w-[200px]">
                         {exp.category}
                       </span>
                     )}
                     {exp.date && (
-                      <span>{new Date(exp.date).toLocaleDateString('id-ID')}</span>
+                      <span className="shrink-0">{new Date(exp.date).toLocaleDateString('id-ID')}</span>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="font-semibold text-destructive">Rp {exp.amount.toLocaleString('id-ID')}</span>
+                <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-border/50 shrink-0">
+                  <span className="font-semibold text-destructive whitespace-nowrap">Rp {exp.amount.toLocaleString('id-ID')}</span>
                   <div className="flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(exp)}>
                       <Pencil className="h-4 w-4" />
