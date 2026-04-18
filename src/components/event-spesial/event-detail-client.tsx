@@ -79,8 +79,16 @@ export function EventDetailClient({ event, initialExpenses }: Props) {
 
     setLoading(true)
 
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      toast.error('Session tidak ditemukan')
+      setLoading(false)
+      return
+    }
+
     const payload = {
       special_event_id: event.id,
+      user_id: user.id,
       name: form.name,
       category: form.category || null,
       amount: parseFloat(form.amount.replace(/,/g, '')),

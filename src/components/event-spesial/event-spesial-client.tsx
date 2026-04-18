@@ -58,7 +58,15 @@ export function EventSpesialClient({ initialEvents }: Props) {
     }
     setLoading(true)
 
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      toast.error('Session tidak ditemukan')
+      setLoading(false)
+      return
+    }
+
     const payload = {
+      user_id: user.id,
       name: form.name,
       date: form.date ? form.date : null,
       budget: form.budget ? parseFloat(form.budget) : 0
