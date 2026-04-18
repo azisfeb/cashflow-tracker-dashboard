@@ -43,3 +43,23 @@ export interface MonthlySummary {
   income: number
   expense: number
 }
+
+export interface SpecialEvent {
+  id: string
+  user_id: string
+  name: string
+  date: string | null
+  budget: number
+  created_at: string
+}
+
+export interface SpecialEventExpense {
+  id: string
+  special_event_id: string
+  user_id: string
+  name: string
+  category: string | null
+  amount: number
+  date: string | null
+  created_at: string
+}
