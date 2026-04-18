@@ -229,7 +229,7 @@ export function EventDetailClient({ event, initialExpenses }: Props) {
             
             <div className="space-y-2">
               <Label>Kategori</Label>
-              <Select value={form.category} onValueChange={(v) => setForm(f => ({ ...f, category: v }))}>
+              <Select value={form.category} onValueChange={(v) => setForm(f => ({ ...f, category: v || '' }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih kategori" />
                 </SelectTrigger>
