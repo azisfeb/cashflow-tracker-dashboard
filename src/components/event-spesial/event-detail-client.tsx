@@ -204,7 +204,7 @@ export function EventDetailClient({ event, initialExpenses }: Props) {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="font-semibold text-destructive">Rp {exp.amount.toLocaleString('id-ID')}</span>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(exp)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
