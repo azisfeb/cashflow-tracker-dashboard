@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { getBillingMonthIndex } from '@/lib/billing-period'
 import { cn } from '@/lib/utils'
 
@@ -24,6 +25,25 @@ function formatCompact(amount: number) {
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
 
 const FALLBACK_COLOR = '#94a3b8'
+
+/** Returns the billing month index (1–12) that today falls into for the given billing year. */
+function getCurrentBillingMonth(billingYear: number): number | 'all' {
+  const now = new Date()
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  return getBillingMonthIndex(dateStr, billingYear) ?? 'all'
+}
+
+/**
+ * Returns a human-readable date range for a given billing month.
+ * e.g. month=6, year=2026 → "27 Mei – 26 Jun 2026"
+ */
+function getBillingPeriodLabel(month: number, year: number): string {
+  const fromYear = month === 1 ? year - 1 : year
+  const fromMonth = month === 1 ? 12 : month - 1
+  const from = new Date(fromYear, fromMonth - 1, 27)
+  const to = new Date(year, month - 1, 26)
+  return `${from.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} – ${to.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`
+}
 
 export interface ExpenseTransaction {
   category_id?: string | null
@@ -76,7 +96,12 @@ function resolveCategory(t: ExpenseTransaction): { name: string; color: string }
 }
 
 export function ExpenseByCategoryChart({ transactions, billingYear }: Props) {
-  const [selectedMonth, setSelectedMonth] = useState<number | 'all'>('all')
+  const [selectedMonth, setSelectedMonth] = useState<number | 'all'>(
+    () => getCurrentBillingMonth(billingYear)
+  )
+  const [showAll, setShowAll] = useState(false)
+
+  const currentBillingMonth = useMemo(() => getCurrentBillingMonth(billingYear), [billingYear])
 
   const filtered = useMemo(() => {
     if (selectedMonth === 'all') return transactions
@@ -111,7 +136,8 @@ export function ExpenseByCategoryChart({ transactions, billingYear }: Props) {
   }, [filtered])
 
   const total = categoryData.reduce((s, c) => s + c.amount, 0)
-  const topCategories = categoryData.slice(0, 8)
+  const visibleCategories = showAll ? categoryData : categoryData.slice(0, 8)
+  const hasMore = categoryData.length > 8
 
   return (
     <Card>
@@ -122,7 +148,7 @@ export function ExpenseByCategoryChart({ transactions, billingYear }: Props) {
             <p className="text-xs text-muted-foreground mt-0.5">
               {selectedMonth === 'all'
                 ? 'Semua periode dalam siklus tahunan'
-                : `Periode ${MONTH_LABELS[selectedMonth - 1]}`}
+                : getBillingPeriodLabel(selectedMonth, billingYear)}
             </p>
           </div>
 
@@ -139,20 +165,28 @@ export function ExpenseByCategoryChart({ transactions, billingYear }: Props) {
             >
               Semua
             </button>
-            {MONTH_LABELS.map((label, i) => (
-              <button
-                key={label}
-                onClick={() => setSelectedMonth(i + 1)}
-                className={cn(
-                  'px-2.5 py-1 text-xs rounded-md font-medium transition-colors',
-                  selectedMonth === i + 1
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                )}
-              >
-                {label}
-              </button>
-            ))}
+            {MONTH_LABELS.map((label, i) => {
+              const month = i + 1
+              const isCurrent = currentBillingMonth === month
+              return (
+                <button
+                  key={label}
+                  onClick={() => setSelectedMonth(month)}
+                  className={cn(
+                    'relative px-2.5 py-1 text-xs rounded-md font-medium transition-colors',
+                    selectedMonth === month
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  )}
+                >
+                  {label}
+                  {/* Dot indicator for current billing month */}
+                  {isCurrent && selectedMonth !== month && (
+                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-primary rounded-full" />
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
       </CardHeader>
@@ -163,7 +197,7 @@ export function ExpenseByCategoryChart({ transactions, billingYear }: Props) {
             <p className="text-sm text-muted-foreground">
               {selectedMonth === 'all'
                 ? 'Belum ada data pengeluaran'
-                : `Tidak ada pengeluaran di periode ${MONTH_LABELS[selectedMonth - 1]}`}
+                : `Tidak ada pengeluaran di ${getBillingPeriodLabel(selectedMonth, billingYear)}`}
             </p>
           </div>
         ) : (
@@ -204,7 +238,7 @@ export function ExpenseByCategoryChart({ transactions, billingYear }: Props) {
 
             {/* Ranked list */}
             <div className="lg:w-7/12 space-y-3">
-              {topCategories.map((cat, i) => (
+              {visibleCategories.map((cat, i) => (
                 <div key={cat.name} className="flex items-center gap-3">
                   {/* Rank */}
                   <span className="text-xs font-semibold text-muted-foreground w-5 shrink-0 text-right">
@@ -244,11 +278,24 @@ export function ExpenseByCategoryChart({ transactions, billingYear }: Props) {
                 </div>
               ))}
 
-              {/* "Others" row when > 8 categories */}
-              {categoryData.length > 8 && (
-                <p className="text-xs text-muted-foreground pt-1 pl-8">
-                  +{categoryData.length - 8} kategori lainnya tidak ditampilkan
-                </p>
+              {/* Show more / collapse toggle */}
+              {hasMore && (
+                <button
+                  onClick={() => setShowAll(prev => !prev)}
+                  className="flex items-center gap-1.5 pl-8 text-xs text-primary hover:text-primary/80 font-medium transition-colors mt-1"
+                >
+                  {showAll ? (
+                    <>
+                      <ChevronUp className="h-3.5 w-3.5" />
+                      Sembunyikan
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3.5 w-3.5" />
+                      Lihat semua ({categoryData.length} kategori)
+                    </>
+                  )}
+                </button>
               )}
             </div>
           </div>
