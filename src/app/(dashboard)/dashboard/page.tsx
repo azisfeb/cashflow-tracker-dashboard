@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MonthlyChart } from '@/components/dashboard/monthly-chart'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
+import { ExpenseByCategoryChart } from '@/components/dashboard/expense-by-category-chart'
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react'
 import { getAnnualBillingRange, getBillingMonthIndex } from '@/lib/billing-period'
 
@@ -23,7 +24,7 @@ export default async function DashboardPage() {
   // Fetch all transactions within the annual billing cycle
   const { data: transactions } = await supabase
     .from('transactions')
-    .select('amount, type, date, description, categories(name, color)')
+    .select('amount, type, date, description, category_id, categories(name, color)')
     .eq('user_id', user!.id)
     .gte('date', annual.from)
     .lte('date', annual.to)
@@ -64,6 +65,8 @@ export default async function DashboardPage() {
     ...t,
     categories: Array.isArray(t.categories) ? (t.categories[0] ?? null) : t.categories,
   }))
+
+  const expenseTransactions = allTransactions.filter(t => t.type === 'expense')
 
   return (
     <div className="space-y-6">
@@ -123,6 +126,11 @@ export default async function DashboardPage() {
           <RecentTransactions transactions={recentTransactions} />
         </div>
       </div>
+
+      <ExpenseByCategoryChart
+        transactions={expenseTransactions}
+        billingYear={annual.year}
+      />
     </div>
   )
 }
