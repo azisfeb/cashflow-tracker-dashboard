@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,7 +32,6 @@ export function EventSpesialClient({ initialEvents }: Props) {
   const [loading, setLoading] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const supabase = createClient()
-  const router = useRouter()
 
   function openCreate() {
     setEditingId(null)
@@ -117,7 +115,7 @@ export function EventSpesialClient({ initialEvents }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {events.length === 0 && (
           <div className="col-span-full text-center py-10 text-muted-foreground">
-            Belum ada event spesial. Klik "Tambah Acara" untuk mulai.
+            Belum ada event spesial. Klik &quot;Tambah Acara&quot; untuk mulai.
           </div>
         )}
         {events.map((evt) => (

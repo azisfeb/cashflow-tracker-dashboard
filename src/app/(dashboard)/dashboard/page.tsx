@@ -76,41 +76,41 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="glass-panel glow-hover border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Pemasukan</CardTitle>
-            <div className="p-2 rounded-lg bg-green-500/10">
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Total Pemasukan</CardTitle>
+            <div className="p-2.5 rounded-xl bg-green-500/10 shadow-sm">
               <TrendingUp className="h-4 w-4 text-green-500" />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-green-500">{formatRupiah(totalIncome)}</p>
+            <p className="text-2xl font-extrabold text-green-500 tracking-tight">{formatRupiah(totalIncome)}</p>
             <p className="text-xs text-muted-foreground mt-1">{annual.label}</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="glass-panel glow-hover border-l-4 border-l-red-500">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Pengeluaran</CardTitle>
-            <div className="p-2 rounded-lg bg-red-500/10">
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Total Pengeluaran</CardTitle>
+            <div className="p-2.5 rounded-xl bg-red-500/10 shadow-sm">
               <TrendingDown className="h-4 w-4 text-red-500" />
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-red-500">{formatRupiah(totalExpense)}</p>
+            <p className="text-2xl font-extrabold text-red-500 tracking-tight">{formatRupiah(totalExpense)}</p>
             <p className="text-xs text-muted-foreground mt-1">{annual.label}</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="glass-panel glow-hover border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Saldo Bersih</CardTitle>
-            <div className={`p-2 rounded-lg ${balance >= 0 ? 'bg-primary/10' : 'bg-red-500/10'}`}>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Saldo Bersih</CardTitle>
+            <div className={`p-2.5 rounded-xl shadow-sm ${balance >= 0 ? 'bg-primary/10' : 'bg-red-500/10'}`}>
               <Wallet className={`h-4 w-4 ${balance >= 0 ? 'text-primary' : 'text-red-500'}`} />
             </div>
           </CardHeader>
           <CardContent>
-            <p className={`text-2xl font-bold ${balance >= 0 ? 'text-primary' : 'text-red-500'}`}>
+            <p className={`text-2xl font-extrabold tracking-tight ${balance >= 0 ? 'text-primary' : 'text-red-500'}`}>
               {formatRupiah(balance)}
             </p>
             <p className="text-xs text-muted-foreground mt-1">Pemasukan − Pengeluaran</p>

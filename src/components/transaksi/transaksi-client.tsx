@@ -320,36 +320,36 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-green-500/10">
+        <Card className="glass-panel glow-hover border-l-4 border-l-green-500">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="p-2.5 rounded-xl bg-green-500/10 shadow-sm">
               <TrendingUp className="h-4 w-4 text-green-500" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Pemasukan</p>
-              <p className="text-sm font-semibold text-green-500">{formatRupiah(summary.income)}</p>
+              <p className="text-xs font-semibold text-muted-foreground">Pemasukan</p>
+              <p className="text-sm font-extrabold text-green-500 tracking-tight mt-0.5">{formatRupiah(summary.income)}</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-red-500/10">
+        <Card className="glass-panel glow-hover border-l-4 border-l-red-500">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="p-2.5 rounded-xl bg-red-500/10 shadow-sm">
               <TrendingDown className="h-4 w-4 text-red-400" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Pengeluaran</p>
-              <p className="text-sm font-semibold text-red-400">{formatRupiah(summary.expense)}</p>
+              <p className="text-xs font-semibold text-muted-foreground">Pengeluaran</p>
+              <p className="text-sm font-extrabold text-red-400 tracking-tight mt-0.5">{formatRupiah(summary.expense)}</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${summary.balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+        <Card className="glass-panel glow-hover border-l-4 border-l-primary">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className={`p-2.5 rounded-xl shadow-sm ${summary.balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
               <Minus className={`h-4 w-4 ${summary.balance >= 0 ? 'text-green-500' : 'text-red-400'}`} />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Selisih</p>
-              <p className={`text-sm font-semibold ${summary.balance >= 0 ? 'text-green-500' : 'text-red-400'}`}>
+              <p className="text-xs font-semibold text-muted-foreground">Selisih</p>
+              <p className={`text-sm font-extrabold tracking-tight mt-0.5 ${summary.balance >= 0 ? 'text-green-500' : 'text-red-400'}`}>
                 {summary.balance >= 0 ? '+' : ''}{formatRupiah(summary.balance)}
               </p>
             </div>
@@ -361,7 +361,7 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
       {filtered.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Category breakdown */}
-          <Card>
+          <Card className="glass-panel glow-hover border-border/40">
             <CardContent className="p-4">
               <p className="text-sm font-medium mb-3">Komposisi per Kategori</p>
               {categoryChartData.length === 0 ? (
@@ -401,16 +401,16 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
                       .sort((a, b) => b.expense - a.expense)
                       .slice(0, 8)
                       .map((d, i) => {
-                        const grandTotal = categoryChartData.reduce((s, x) => s + x.expense, 0)
-                        const pct = grandTotal > 0 ? Math.round((d.expense / grandTotal) * 100) : 0
-                        return (
-                          <div key={i} className="flex items-center gap-2 text-xs">
-                            <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                            <span className="truncate flex-1 text-muted-foreground">{d.name}</span>
-                            <span className="font-medium shrink-0">{pct}%</span>
-                          </div>
-                        )
-                      })}
+                         const grandTotal = categoryChartData.reduce((s, x) => s + x.expense, 0)
+                         const pct = grandTotal > 0 ? Math.round((d.expense / grandTotal) * 100) : 0
+                         return (
+                           <div key={i} className="flex items-center gap-2 text-xs">
+                             <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                             <span className="truncate flex-1 text-muted-foreground">{d.name}</span>
+                             <span className="font-medium shrink-0">{pct}%</span>
+                           </div>
+                         )
+                       })}
                   </div>
                 </div>
               )}
@@ -418,7 +418,7 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
           </Card>
 
           {/* Daily expense */}
-          <Card>
+          <Card className="glass-panel glow-hover border-border/40">
             <CardContent className="p-4">
               <p className="text-sm font-medium mb-3">Pengeluaran Harian</p>
               {dailyExpenseData.length === 0 ? (
@@ -461,7 +461,7 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
         </div>
       )}
 
-      <Card>
+      <Card className="glass-panel border-border/40 overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>

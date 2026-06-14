@@ -128,3 +128,40 @@
     @apply font-sans;
   }
 }
+
+@utility glass-panel {
+  background-color: var(--card);
+  backdrop-filter: blur(12px);
+  border: 1px solid oklch(from var(--border) l c h / 0.4);
+}
+
+@utility glow-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 15px oklch(from var(--primary) l c h / 0.15);
+    transform: translateY(-2px);
+  }
+}
+
+@utility hover-scale {
+  transition: transform 0.2s ease;
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+@utility animate-fade-in-up {
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

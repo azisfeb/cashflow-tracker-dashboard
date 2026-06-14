@@ -27,7 +27,7 @@ interface Props {
 
 export function RecentTransactions({ transactions }: Props) {
   return (
-    <Card className="h-full">
+    <Card className="glass-panel border-border/40 h-full glow-hover">
       <CardHeader>
         <CardTitle className="text-base">Transaksi Terbaru</CardTitle>
       </CardHeader>

@@ -9,8 +9,10 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
-  // Avoid hydration mismatch — only render after mount
-  useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 0)
+    return () => clearTimeout(timer)
+  }, [])
 
   if (!mounted) return <div className="h-9 w-9" />
 

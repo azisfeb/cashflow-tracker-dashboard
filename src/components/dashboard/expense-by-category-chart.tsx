@@ -140,7 +140,7 @@ export function ExpenseByCategoryChart({ transactions, billingYear }: Props) {
   const hasMore = categoryData.length > 8
 
   return (
-    <Card>
+    <Card className="glass-panel border-border/40 glow-hover">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
