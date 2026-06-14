@@ -39,32 +39,32 @@ export function Sidebar({ user }: { user: User }) {
   }
 
   return (
-    <aside className="hidden md:flex flex-col w-64 h-screen bg-sidebar border-r border-sidebar-border shrink-0">
-      <div className="p-6 border-b border-sidebar-border">
+    <aside className="hidden md:flex flex-col w-64 h-screen bg-sidebar/85 backdrop-blur-md border-r border-sidebar-border/40 shrink-0">
+      <div className="p-6 border-b border-sidebar-border/40">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/20">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/20 shadow-inner">
             <span className="text-lg">💰</span>
           </div>
           <div>
-            <p className="font-semibold text-sm">Cashflow</p>
+            <p className="font-semibold text-sm tracking-wide">Cashflow</p>
             <p className="text-xs text-muted-foreground truncate max-w-[130px]">{user.email}</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1.5">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link key={item.href} href={item.href}>
               <span className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 hover:translate-x-1',
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/10'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
               )}>
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className={cn("h-4 w-4 shrink-0 transition-transform duration-300", isActive && "scale-110")} />
                 {item.label}
               </span>
             </Link>

@@ -64,11 +64,19 @@ export function KategoriClient({ initialCategories }: Props) {
     }
     setLoading(true)
 
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      toast.error('Sesi tidak valid, silakan login ulang')
+      setLoading(false)
+      return
+    }
+
     if (editingId) {
       const { error } = await supabase
         .from('categories')
         .update({ name: form.name, type: form.type, color: form.color })
         .eq('id', editingId)
+        .eq('user_id', user.id)
 
       if (error) { toast.error('Gagal mengubah kategori'); setLoading(false); return }
       setCategories(cats => cats.map(c => c.id === editingId ? { ...c, ...form } : c))
@@ -76,7 +84,7 @@ export function KategoriClient({ initialCategories }: Props) {
     } else {
       const { data, error } = await supabase
         .from('categories')
-        .insert({ name: form.name, type: form.type, color: form.color })
+        .insert({ name: form.name, type: form.type, color: form.color, user_id: user.id })
         .select()
         .single()
 
@@ -90,7 +98,15 @@ export function KategoriClient({ initialCategories }: Props) {
   }
 
   async function handleDelete(id: string) {
-    const { error } = await supabase.from('categories').delete().eq('id', id)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { toast.error('Sesi tidak valid'); return }
+
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+
     if (error) { toast.error('Gagal menghapus kategori'); return }
     setCategories(cats => cats.filter(c => c.id !== id))
     setDeleteId(null)
@@ -201,22 +217,25 @@ function CategorySection({
   onDelete: (id: string) => void
 }) {
   return (
-    <Card>
-      <CardContent className="pt-4">
-        <h3 className="font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wide">{title}</h3>
+    <Card className="glass-panel border border-border/40 overflow-hidden">
+      <CardContent className="pt-5">
+        <h3 className="font-semibold text-sm mb-4 text-muted-foreground uppercase tracking-wider">{title}</h3>
         {categories.length === 0 && (
-          <p className="text-sm text-muted-foreground py-4 text-center">Belum ada kategori</p>
+          <p className="text-sm text-muted-foreground py-6 text-center">Belum ada kategori</p>
         )}
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {categories.map(cat => (
-            <div key={cat.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors group">
-              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-              <span className="text-sm flex-1">{cat.name}</span>
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(cat)}>
+            <div
+              key={cat.id}
+              className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/30 hover:border-border/80 transition-all hover:shadow-sm group relative overflow-hidden"
+            >
+              <div className="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm transition-transform duration-300 group-hover:scale-110" style={{ backgroundColor: cat.color }} />
+              <span className="text-sm font-medium flex-1 truncate">{cat.name}</span>
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-l from-card via-card pl-4">
+                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted/80 rounded-lg" onClick={() => onEdit(cat)}>
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(cat.id)}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg" onClick={() => onDelete(cat.id)}>
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
