@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -23,3 +24,14 @@ export async function createClient() {
     }
   )
 }
+
+/**
+ * Retrieves the currently authenticated user, caching the result
+ * for the lifetime of a single request to avoid redundant network roundtrips.
+ */
+export const getCachedUser = cache(async () => {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+})
+

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MonthlyChart } from '@/components/dashboard/monthly-chart'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
@@ -15,8 +15,8 @@ function formatRupiah(amount: number) {
 }
 
 export default async function DashboardPage() {
+  const user = await getCachedUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
   const now = new Date()
   const annual = getAnnualBillingRange(now.getFullYear())
