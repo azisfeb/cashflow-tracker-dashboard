@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 import { TransaksiClient } from '@/components/transaksi/transaksi-client'
 
 export default async function TransaksiPage() {
+  const user = await getCachedUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
   const [{ data: transactions }, { data: categories }] = await Promise.all([
     supabase

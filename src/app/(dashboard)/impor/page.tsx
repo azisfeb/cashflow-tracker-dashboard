@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 import { ImporClient } from '@/components/impor/impor-client'
 
 export default async function ImporPage() {
+  const user = await getCachedUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
   const [{ data: categories }, { data: importLogs }] = await Promise.all([
     supabase.from('categories').select('*').eq('user_id', user!.id).order('name'),

@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getCachedUser } from '@/lib/supabase/server'
 import { KategoriClient } from '@/components/kategori/kategori-client'
 
 export default async function KategoriPage() {
+  const user = await getCachedUser()
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
   const { data: categories } = await supabase
     .from('categories')
