@@ -1,13 +1,9 @@
+'use client'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
-
-function formatRupiah(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(amount)
-}
+import { useNominalVisibility } from '@/components/layout/nominal-visibility-provider'
+import { formatRupiah } from '@/lib/format'
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
@@ -26,6 +22,8 @@ interface Props {
 }
 
 export function RecentTransactions({ transactions }: Props) {
+  const { isHidden } = useNominalVisibility()
+
   return (
     <Card className="glass-panel border-border/40 h-full glow-hover">
       <CardHeader>
@@ -49,7 +47,7 @@ export function RecentTransactions({ transactions }: Props) {
             </div>
             <div className="text-right shrink-0">
               <p className={`text-sm font-semibold ${t.type === 'income' ? 'text-green-500' : 'text-red-500'}`}>
-                {t.type === 'expense' ? '-' : '+'}{formatRupiah(t.amount)}
+                {t.type === 'expense' ? '-' : '+'}{formatRupiah(t.amount, isHidden)}
               </p>
               {t.categories && (
                 <span 

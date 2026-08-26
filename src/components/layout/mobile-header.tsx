@@ -9,12 +9,13 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { ThemeToggle } from '@/components/layout/theme-toggle'
+import { NominalToggle } from '@/components/layout/nominal-toggle'
 import { 
   LayoutDashboard, 
   ArrowLeftRight, 
   Tag, 
   Upload, 
-  LogOut,
+  LogOut, 
   Menu,
   PartyPopper
 } from 'lucide-react'
@@ -53,6 +54,7 @@ export function MobileHeader({ user }: { user: User }) {
         <span className="font-semibold text-sm">{currentPage}</span>
       </div>
       <div className="flex items-center gap-1">
+        <NominalToggle />
         <ThemeToggle />
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger

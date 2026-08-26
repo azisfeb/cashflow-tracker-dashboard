@@ -24,6 +24,8 @@ import { toast } from 'sonner'
 import { Upload, FileSpreadsheet, CheckCircle2, XCircle, Loader2, AlertCircle, Download } from 'lucide-react'
 import Papa from 'papaparse'
 import type { Category, ImportLog } from '@/lib/types'
+import { useNominalVisibility } from '@/components/layout/nominal-visibility-provider'
+import { formatRupiah } from '@/lib/format'
 
 interface RawRow {
   [key: string]: string
@@ -49,6 +51,7 @@ interface Props {
 const emptyMapping = { date: '', description: '', amount: '', type: '', category: '', qty: '', harga: '' }
 
 export function ImporClient({ categories, importLogs: initialLogs }: Props) {
+  const { isHidden } = useNominalVisibility()
   const [logs, setLogs] = useState(initialLogs)
   const [file, setFile] = useState<File | null>(null)
   const [headers, setHeaders] = useState<string[]>([])
@@ -365,7 +368,7 @@ export function ImporClient({ categories, importLogs: initialLogs }: Props) {
                         </span>
                       </TableCell>
                       <TableCell className="text-right text-sm">
-                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(row.amount)}
+                        {formatRupiah(row.amount, isHidden)}
                       </TableCell>
                       <TableCell>
                         {row.valid

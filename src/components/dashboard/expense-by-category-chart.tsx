@@ -6,21 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { getBillingMonthIndex } from '@/lib/billing-period'
 import { cn } from '@/lib/utils'
-
-function formatRupiah(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(amount)
-}
-
-function formatCompact(amount: number) {
-  if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1)}M`
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}jt`
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(0)}rb`
-  return `${amount}`
-}
+import { useNominalVisibility } from '@/components/layout/nominal-visibility-provider'
+import { formatRupiah, formatCompact } from '@/lib/format'
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
 
@@ -70,6 +57,7 @@ interface TooltipProps {
 }
 
 function CustomTooltip({ active, payload }: TooltipProps) {
+  const { isHidden } = useNominalVisibility()
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
@@ -83,7 +71,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
       }}
     >
       <p style={{ color: 'oklch(0.87 0 0)', fontWeight: 600, marginBottom: 2 }}>{d.name}</p>
-      <p style={{ color: 'oklch(0.87 0 0)' }}>{formatRupiah(d.amount)}</p>
+      <p style={{ color: 'oklch(0.87 0 0)' }}>{formatRupiah(d.amount, isHidden)}</p>
       <p style={{ color: 'oklch(0.58 0.03 172)' }}>{d.percentage.toFixed(1)}% dari total</p>
     </div>
   )
@@ -96,6 +84,7 @@ function resolveCategory(t: ExpenseTransaction): { name: string; color: string }
 }
 
 export function ExpenseByCategoryChart({ transactions, billingYear }: Props) {
+  const { isHidden } = useNominalVisibility()
   const [selectedMonth, setSelectedMonth] = useState<number | 'all'>(
     () => getCurrentBillingMonth(billingYear)
   )
@@ -229,7 +218,7 @@ export function ExpenseByCategoryChart({ transactions, billingYear }: Props) {
               {/* Center label */}
               <div className="absolute pointer-events-none text-center">
                 <p className="text-xs text-muted-foreground leading-tight">Total</p>
-                <p className="text-lg font-bold leading-tight">{formatCompact(total)}</p>
+                <p className="text-lg font-bold leading-tight">{formatCompact(total, isHidden)}</p>
                 <p className="text-xs text-muted-foreground leading-tight">
                   {categoryData.length} kategori
                 </p>
@@ -256,7 +245,7 @@ export function ExpenseByCategoryChart({ transactions, billingYear }: Props) {
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-medium truncate">{cat.name}</span>
                       <span className="text-sm font-semibold shrink-0 tabular-nums">
-                        {formatRupiah(cat.amount)}
+                        {formatRupiah(cat.amount, isHidden)}
                       </span>
                     </div>
                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">

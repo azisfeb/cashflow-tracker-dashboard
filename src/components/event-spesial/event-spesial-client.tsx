@@ -17,6 +17,8 @@ import {
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Loader2, Calendar } from 'lucide-react'
 import type { SpecialEvent } from '@/lib/types'
+import { useNominalVisibility } from '@/components/layout/nominal-visibility-provider'
+import { formatRupiah } from '@/lib/format'
 
 interface Props {
   initialEvents: SpecialEvent[]
@@ -25,6 +27,7 @@ interface Props {
 const emptyForm = { name: '', date: '', budget: '' }
 
 export function EventSpesialClient({ initialEvents }: Props) {
+  const { isHidden } = useNominalVisibility()
   const [events, setEvents] = useState(initialEvents)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -144,7 +147,7 @@ export function EventSpesialClient({ initialEvents }: Props) {
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Anggaran:</span>
-                  <span className="font-medium">Rp {evt.budget.toLocaleString('id-ID')}</span>
+                  <span className="font-medium">{formatRupiah(evt.budget, isHidden)}</span>
                 </div>
               </div>
               

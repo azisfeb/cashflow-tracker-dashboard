@@ -37,14 +37,8 @@ import {
   PieChart, Pie, Cell, Tooltip as RechartsTooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
 } from 'recharts'
-
-function formatRupiah(amount: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(amount)
-}
+import { useNominalVisibility } from '@/components/layout/nominal-visibility-provider'
+import { formatRupiah, formatCompact } from '@/lib/format'
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -78,6 +72,7 @@ interface Props {
 }
 
 export function TransaksiClient({ initialTransactions, categories }: Props) {
+  const { isHidden } = useNominalVisibility()
   const [transactions, setTransactions] = useState(initialTransactions)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -327,7 +322,7 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
             </div>
             <div>
               <p className="text-xs font-semibold text-muted-foreground">Pemasukan</p>
-              <p className="text-sm font-extrabold text-green-500 tracking-tight mt-0.5">{formatRupiah(summary.income)}</p>
+              <p className="text-sm font-extrabold text-green-500 tracking-tight mt-0.5">{formatRupiah(summary.income, isHidden)}</p>
             </div>
           </CardContent>
         </Card>
@@ -338,7 +333,7 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
             </div>
             <div>
               <p className="text-xs font-semibold text-muted-foreground">Pengeluaran</p>
-              <p className="text-sm font-extrabold text-red-400 tracking-tight mt-0.5">{formatRupiah(summary.expense)}</p>
+              <p className="text-sm font-extrabold text-red-400 tracking-tight mt-0.5">{formatRupiah(summary.expense, isHidden)}</p>
             </div>
           </CardContent>
         </Card>
@@ -350,7 +345,7 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
             <div>
               <p className="text-xs font-semibold text-muted-foreground">Selisih</p>
               <p className={`text-sm font-extrabold tracking-tight mt-0.5 ${summary.balance >= 0 ? 'text-green-500' : 'text-red-400'}`}>
-                {summary.balance >= 0 ? '+' : ''}{formatRupiah(summary.balance)}
+                {summary.balance >= 0 ? '+' : ''}{formatRupiah(summary.balance, isHidden)}
               </p>
             </div>
           </CardContent>
@@ -384,7 +379,7 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
                         ))}
                       </Pie>
                       <RechartsTooltip
-                        formatter={(value, _name, props) => [formatRupiah(Number(value ?? 0)), props.payload?.name ?? '']}
+                        formatter={(value, _name, props) => [formatRupiah(Number(value ?? 0), isHidden), props.payload?.name ?? '']}
                         contentStyle={{
                           backgroundColor: 'oklch(0.115 0.025 172)',
                           border: '1px solid oklch(0.24 0.04 172)',
@@ -435,14 +430,14 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
                       interval="preserveStartEnd"
                     />
                     <YAxis
-                      tickFormatter={(v: number) => v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}jt` : v >= 1_000 ? `${(v / 1_000).toFixed(0)}rb` : String(v)}
+                      tickFormatter={(v: number) => formatCompact(v, isHidden)}
                       tick={{ fontSize: 10, fill: 'oklch(0.58 0.03 172)' }}
                       axisLine={false}
                       tickLine={false}
                       width={44}
                     />
                     <RechartsTooltip
-                      formatter={(value) => [formatRupiah(Number(value ?? 0)), 'Pengeluaran']}
+                      formatter={(value) => [formatRupiah(Number(value ?? 0), isHidden), 'Pengeluaran']}
                       contentStyle={{
                         backgroundColor: 'oklch(0.115 0.025 172)',
                         border: '1px solid oklch(0.24 0.04 172)',
@@ -512,12 +507,12 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
                     </TableCell>
                     <TableCell className="text-right text-xs text-muted-foreground">
                       {t.price != null
-                        ? <span>{t.quantity ?? 1} × {formatRupiah(t.price)}</span>
+                        ? <span>{t.quantity ?? 1} × {formatRupiah(t.price, isHidden)}</span>
                         : <span>—</span>
                       }
                     </TableCell>
                     <TableCell className={`text-right text-sm font-semibold ${t.type === 'income' ? 'text-green-500' : 'text-red-400'}`}>
-                      {t.type === 'expense' ? '-' : '+'}{formatRupiah(t.amount)}
+                      {t.type === 'expense' ? '-' : '+'}{formatRupiah(t.amount, isHidden)}
                     </TableCell>
                     <TableCell className="text-right">
                       <Badge variant="outline" className="text-xs">{SOURCE_LABELS[t.source] ?? t.source}</Badge>

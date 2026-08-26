@@ -2,18 +2,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-
-function formatRupiah(amount: number) {
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}jt`
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(0)}rb`
-  return `${amount}`
-}
+import { useNominalVisibility } from '@/components/layout/nominal-visibility-provider'
+import { formatRupiah, formatCompact } from '@/lib/format'
 
 interface Props {
   data: Array<{ month: string; income: number; expense: number }>
 }
 
 export function MonthlyChart({ data }: Props) {
+  const { isHidden } = useNominalVisibility()
+
   return (
     <Card className="glass-panel border-border/40 h-full glow-hover">
       <CardHeader>
@@ -30,14 +28,14 @@ export function MonthlyChart({ data }: Props) {
               tickLine={false}
             />
             <YAxis 
-              tickFormatter={formatRupiah} 
+              tickFormatter={(val) => isHidden ? '••••' : formatCompact(val)} 
               tick={{ fontSize: 11, fill: 'oklch(0.58 0.03 172)' }}
               axisLine={false}
               tickLine={false}
               width={50}
             />
             <Tooltip
-              formatter={(value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(value))}
+              formatter={(value) => formatRupiah(Number(value), isHidden)}
               contentStyle={{ 
                 backgroundColor: 'oklch(0.115 0.025 172)',
                 border: '1px solid oklch(0.24 0.04 172)',
