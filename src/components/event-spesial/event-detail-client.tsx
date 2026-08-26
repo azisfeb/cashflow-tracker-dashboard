@@ -23,6 +23,8 @@ import {
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Loader2, DollarSign, ListOrdered, Wallet } from 'lucide-react'
 import type { SpecialEvent, SpecialEventExpense } from '@/lib/types'
+import { useNominalVisibility } from '@/components/layout/nominal-visibility-provider'
+import { formatRupiah } from '@/lib/format'
 
 interface Props {
   event: SpecialEvent
@@ -42,6 +44,7 @@ const COMMON_CATEGORIES = [
 const emptyForm = { name: '', category: '', amount: '', date: '' }
 
 export function EventDetailClient({ event, initialExpenses }: Props) {
+  const { isHidden } = useNominalVisibility()
   const [expenses, setExpenses] = useState(initialExpenses)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -139,7 +142,7 @@ export function EventDetailClient({ event, initialExpenses }: Props) {
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rp {event.budget.toLocaleString('id-ID')}</div>
+            <div className="text-2xl font-bold">{formatRupiah(event.budget, isHidden)}</div>
           </CardContent>
         </Card>
         
@@ -149,7 +152,7 @@ export function EventDetailClient({ event, initialExpenses }: Props) {
             <ListOrdered className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">Rp {totalSpent.toLocaleString('id-ID')}</div>
+            <div className="text-2xl font-bold text-destructive">{formatRupiah(totalSpent, isHidden)}</div>
           </CardContent>
         </Card>
 
@@ -160,7 +163,7 @@ export function EventDetailClient({ event, initialExpenses }: Props) {
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${remainingBudget < 0 ? 'text-destructive' : 'text-primary'}`}>
-              Rp {remainingBudget.toLocaleString('id-ID')}
+              {formatRupiah(remainingBudget, isHidden)}
             </div>
             {event.budget > 0 && (
               <div className="text-xs text-muted-foreground mt-1">
@@ -203,7 +206,7 @@ export function EventDetailClient({ event, initialExpenses }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-border/50 shrink-0">
-                  <span className="font-semibold text-destructive whitespace-nowrap">Rp {exp.amount.toLocaleString('id-ID')}</span>
+                  <span className="font-semibold text-destructive whitespace-nowrap">{formatRupiah(exp.amount, isHidden)}</span>
                   <div className="flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(exp)}>
                       <Pencil className="h-4 w-4" />

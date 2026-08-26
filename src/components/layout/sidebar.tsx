@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/layout/theme-toggle'
+import { NominalToggle } from '@/components/layout/nominal-toggle'
 import { 
   LayoutDashboard, 
   ArrowLeftRight, 
@@ -74,8 +75,11 @@ export function Sidebar({ user }: { user: User }) {
 
       <div className="p-4 border-t border-sidebar-border space-y-1">
         <div className="flex items-center justify-between px-3 py-1">
-          <span className="text-xs text-muted-foreground">Tema</span>
-          <ThemeToggle />
+          <span className="text-xs text-muted-foreground">Tampilan</span>
+          <div className="flex items-center gap-1">
+            <NominalToggle />
+            <ThemeToggle />
+          </div>
         </div>
         <Button
           variant="ghost"
