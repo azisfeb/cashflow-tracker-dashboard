@@ -14,9 +14,11 @@ import {
   Tag, 
   Upload, 
   LogOut,
-  PartyPopper
+  PartyPopper,
+  Users
 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
+import type { UserRole } from '@/lib/types'
 import { toast } from 'sonner'
 
 const navItems = [
@@ -27,10 +29,16 @@ const navItems = [
   { href: '/impor', label: 'Impor', icon: Upload },
 ]
 
-export function Sidebar({ user }: { user: User }) {
+const superadminNavItems = [
+  { href: '/manajemen-akun', label: 'Manajemen Akun', icon: Users },
+]
+
+export function Sidebar({ user, role }: { user: User; role: UserRole }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+
+  const items = role === 'superadmin' ? [...navItems, ...superadminNavItems] : navItems
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -54,7 +62,7 @@ export function Sidebar({ user }: { user: User }) {
       </div>
 
       <nav className="flex-1 p-4 space-y-1.5">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
           return (

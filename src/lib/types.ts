@@ -2,6 +2,24 @@ export type TransactionType = 'income' | 'expense'
 export type TransactionSource = 'manual' | 'import' | 'telegram'
 export type CategoryType = 'income' | 'expense'
 export type ImportStatus = 'pending' | 'done' | 'error'
+export type UserRole = 'superadmin' | 'admin'
+
+export interface Profile {
+  id: string
+  email: string | null
+  role: UserRole
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminUser {
+  id: string
+  email: string | undefined
+  role: UserRole
+  banned_until: string | null
+  created_at: string
+  last_sign_in_at: string | null
+}
 
 export interface Category {
   id: string
@@ -26,6 +44,11 @@ export interface Transaction {
   source: TransactionSource
   telegram_message_id?: string | null
   created_at: string
+  created_by?: string | null
+  updated_by?: string | null
+  updated_at?: string | null
+  deleted_by?: string | null
+  deleted_at?: string | null
   categories?: Category | null
 }
 

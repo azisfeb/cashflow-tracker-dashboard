@@ -17,9 +17,11 @@ import {
   Upload, 
   LogOut, 
   Menu,
-  PartyPopper
+  PartyPopper,
+  Users
 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
+import type { UserRole } from '@/lib/types'
 import { toast } from 'sonner'
 
 const navItems = [
@@ -30,11 +32,17 @@ const navItems = [
   { href: '/impor', label: 'Impor', icon: Upload },
 ]
 
-export function MobileHeader({ user }: { user: User }) {
+const superadminNavItems = [
+  { href: '/manajemen-akun', label: 'Manajemen Akun', icon: Users },
+]
+
+export function MobileHeader({ user, role }: { user: User; role: UserRole }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
   const [open, setOpen] = useState(false)
+
+  const items = role === 'superadmin' ? [...navItems, ...superadminNavItems] : navItems
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -43,7 +51,7 @@ export function MobileHeader({ user }: { user: User }) {
     router.refresh()
   }
 
-  const currentPage = navItems.find(item => 
+  const currentPage = items.find(item => 
     pathname === item.href || pathname.startsWith(item.href + '/')
   )?.label ?? 'Dashboard'
 
@@ -77,7 +85,7 @@ export function MobileHeader({ user }: { user: User }) {
             </div>
           </div>
           <nav className="p-4 space-y-1">
-            {navItems.map((item) => {
+            {items.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
               return (
