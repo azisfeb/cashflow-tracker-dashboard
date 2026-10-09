@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getClientOwnerId } from '@/lib/owner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -76,15 +77,17 @@ export function KategoriClient({ initialCategories }: Props) {
         .from('categories')
         .update({ name: form.name, type: form.type, color: form.color })
         .eq('id', editingId)
-        .eq('user_id', user.id)
 
       if (error) { toast.error('Gagal mengubah kategori'); setLoading(false); return }
       setCategories(cats => cats.map(c => c.id === editingId ? { ...c, ...form } : c))
       toast.success('Kategori diperbarui')
     } else {
+      const ownerId = await getClientOwnerId()
+      if (!ownerId) { toast.error('Sesi tidak valid'); setLoading(false); return }
+
       const { data, error } = await supabase
         .from('categories')
-        .insert({ name: form.name, type: form.type, color: form.color, user_id: user.id })
+        .insert({ name: form.name, type: form.type, color: form.color, user_id: user.id, owner_id: ownerId })
         .select()
         .single()
 
@@ -105,7 +108,6 @@ export function KategoriClient({ initialCategories }: Props) {
       .from('categories')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
 
     if (error) { toast.error('Gagal menghapus kategori'); return }
     setCategories(cats => cats.filter(c => c.id !== id))

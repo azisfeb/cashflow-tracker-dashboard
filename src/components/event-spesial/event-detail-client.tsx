@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getClientOwnerId } from '@/lib/owner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -89,9 +90,17 @@ export function EventDetailClient({ event, initialExpenses }: Props) {
       return
     }
 
+    const ownerId = await getClientOwnerId()
+    if (!ownerId) {
+      toast.error('Session tidak ditemukan')
+      setLoading(false)
+      return
+    }
+
     const payload = {
       special_event_id: event.id,
       user_id: user.id,
+      owner_id: ownerId,
       name: form.name,
       category: form.category || null,
       amount: parseFloat(form.amount.replace(/,/g, '')),

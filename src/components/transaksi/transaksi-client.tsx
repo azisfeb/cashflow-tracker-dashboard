@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getClientOwnerId } from '@/lib/owner'
+import { transactionsApi } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -180,9 +182,12 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
       ))
       toast.success('Transaksi diperbarui')
     } else {
+      const ownerId = await getClientOwnerId()
+      if (!ownerId) { toast.error('Sesi tidak valid'); setLoading(false); return }
+
       const { data, error } = await supabase
         .from('transactions')
-        .insert({ ...basePayload, user_id: user.id })
+        .insert({ ...basePayload, user_id: user.id, owner_id: ownerId })
         .select()
         .single()
 
@@ -196,8 +201,12 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
   }
 
   async function handleDelete(id: string) {
-    const { error } = await supabase.from('transactions').delete().eq('id', id)
-    if (error) { toast.error('Gagal menghapus transaksi'); return }
+    try {
+      await transactionsApi.remove(id)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Gagal menghapus transaksi')
+      return
+    }
     setTransactions(ts => ts.filter(t => t.id !== id))
     setDeleteId(null)
     toast.success('Transaksi dihapus')

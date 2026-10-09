@@ -1,14 +1,15 @@
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getOwnerId } from '@/lib/roles'
 import { EventSpesialClient } from '@/components/event-spesial/event-spesial-client'
 
 export default async function EventSpesialPage() {
-  const user = await getCachedUser()
+  const ownerId = await getOwnerId()
   const supabase = await createClient()
 
   const { data: events } = await supabase
     .from('special_events')
     .select('*')
-    .eq('user_id', user!.id)
+    .eq('owner_id', ownerId!)
     .order('created_at', { ascending: false })
 
   return (

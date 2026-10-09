@@ -24,6 +24,7 @@ export interface AdminUser {
 export interface Category {
   id: string
   user_id: string
+  owner_id?: string
   name: string
   type: CategoryType
   color: string
@@ -34,6 +35,7 @@ export interface Category {
 export interface Transaction {
   id: string
   user_id: string
+  owner_id?: string
   category_id?: string | null
   amount: number
   quantity: number
@@ -55,6 +57,7 @@ export interface Transaction {
 export interface ImportLog {
   id: string
   user_id: string
+  owner_id?: string
   filename: string
   row_count: number
   status: ImportStatus
@@ -70,6 +73,7 @@ export interface MonthlySummary {
 export interface SpecialEvent {
   id: string
   user_id: string
+  owner_id?: string
   name: string
   date: string | null
   budget: number
@@ -80,6 +84,7 @@ export interface SpecialEventExpense {
   id: string
   special_event_id: string
   user_id: string
+  owner_id?: string
   name: string
   category: string | null
   amount: number

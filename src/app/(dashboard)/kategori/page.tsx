@@ -1,14 +1,15 @@
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getOwnerId } from '@/lib/roles'
 import { KategoriClient } from '@/components/kategori/kategori-client'
 
 export default async function KategoriPage() {
-  const user = await getCachedUser()
+  const ownerId = await getOwnerId()
   const supabase = await createClient()
 
   const { data: categories } = await supabase
     .from('categories')
     .select('*')
-    .eq('user_id', user!.id)
+    .eq('owner_id', ownerId!)
     .order('name')
 
   return (

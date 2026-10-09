@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getClientOwnerId } from '@/lib/owner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -194,8 +195,12 @@ export function ImporClient({ categories, importLogs: initialLogs }: Props) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { toast.error('Sesi tidak valid'); setImporting(false); return }
 
+    const ownerId = await getClientOwnerId()
+    if (!ownerId) { toast.error('Sesi tidak valid'); setImporting(false); return }
+
     const inserts = validRows.map(r => ({
       user_id: user.id,
+      owner_id: ownerId,
       amount: r.amount,
       quantity: r.quantity,
       price: r.price ?? null,
@@ -218,6 +223,7 @@ export function ImporClient({ categories, importLogs: initialLogs }: Props) {
       .from('import_logs')
       .insert({
         user_id: user.id,
+        owner_id: ownerId,
         filename: file?.name ?? 'unknown',
         row_count: validRows.length,
         status: 'done',

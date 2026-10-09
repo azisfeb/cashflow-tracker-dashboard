@@ -1,4 +1,5 @@
 import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { getOwnerId } from '@/lib/roles'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { EventDetailClient } from '@/components/event-spesial/event-detail-client'
@@ -10,6 +11,7 @@ export default async function EventSpesialDetailPage({ params }: { params: { id:
 
   if (!user) redirect('/login')
 
+  const ownerId = await getOwnerId()
   const supabase = await createClient()
 
   // Fetch the event and expenses in parallel
@@ -18,7 +20,7 @@ export default async function EventSpesialDetailPage({ params }: { params: { id:
       .from('special_events')
       .select('*')
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('owner_id', ownerId!)
       .single(),
     supabase
       .from('special_event_expenses')

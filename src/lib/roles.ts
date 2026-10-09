@@ -24,3 +24,26 @@ export const getCurrentUserRole = cache(async (): Promise<UserRole> => {
 
   return (data?.role as UserRole) ?? 'superadmin'
 })
+
+/**
+ * Ambil owner_id (id workspace) dari user yang sedang login.
+ * Superadmin: owner_id = dirinya sendiri. Admin: owner_id = superadmin pembuat.
+ * Dipakai untuk scoping semua query data (transaksi, kategori, dll) ke workspace.
+ * Default ke id user sendiri bila profile belum ada.
+ */
+export const getOwnerId = cache(async (): Promise<string | null> => {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return null
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('owner_id')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  return (data?.owner_id as string | undefined) ?? user.id
+})

@@ -24,8 +24,18 @@ async function handle<T>(res: Response): Promise<T> {
   return (body as { data: T }).data
 }
 
-export const adminUsersApi = {
-  async list(): Promise<AdminUser[]> {
+export const transactionsApi = {
+  // Soft delete via backend agar deleted_by/deleted_at tercatat (audit trail).
+  async remove(id: string): Promise<void> {
+    const res = await fetch(`${API_URL}/api/transactions/${id}`, {
+      method: 'DELETE',
+      headers: await authHeaders(),
+    })
+    return handle<void>(res)
+  },
+}
+
+export const adminUsersApi = {  async list(): Promise<AdminUser[]> {
     const res = await fetch(`${API_URL}/api/admin/users`, {
       headers: await authHeaders(),
       cache: 'no-store',
