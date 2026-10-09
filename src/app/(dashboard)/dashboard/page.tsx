@@ -1,4 +1,5 @@
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getOwnerId } from '@/lib/roles'
 import { DashboardStatCards } from '@/components/dashboard/dashboard-stat-cards'
 import { MonthlyChart } from '@/components/dashboard/monthly-chart'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
@@ -6,7 +7,7 @@ import { ExpenseByCategoryChart } from '@/components/dashboard/expense-by-catego
 import { getAnnualBillingRange, getBillingMonthIndex } from '@/lib/billing-period'
 
 export default async function DashboardPage() {
-  const user = await getCachedUser()
+  const ownerId = await getOwnerId()
   const supabase = await createClient()
 
   const now = new Date()
@@ -16,7 +17,8 @@ export default async function DashboardPage() {
   const { data: transactions } = await supabase
     .from('transactions')
     .select('amount, type, date, description, category_id, categories(name, color)')
-    .eq('user_id', user!.id)
+    .eq('owner_id', ownerId!)
+    .is('deleted_at', null)
     .gte('date', annual.from)
     .lte('date', annual.to)
     .order('date', { ascending: false })

@@ -1,20 +1,22 @@
-import { createClient, getCachedUser } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
+import { getOwnerId } from '@/lib/roles'
 import { TransaksiClient } from '@/components/transaksi/transaksi-client'
 
 export default async function TransaksiPage() {
-  const user = await getCachedUser()
+  const ownerId = await getOwnerId()
   const supabase = await createClient()
 
   const [{ data: transactions }, { data: categories }] = await Promise.all([
     supabase
       .from('transactions')
       .select('*, categories(id, name, color, type)')
-      .eq('user_id', user!.id)
+      .eq('owner_id', ownerId!)
+      .is('deleted_at', null)
       .order('date', { ascending: false }),
     supabase
       .from('categories')
       .select('*')
-      .eq('user_id', user!.id)
+      .eq('owner_id', ownerId!)
       .order('name'),
   ])
 
