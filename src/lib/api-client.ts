@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import type { AdminUser, UserRole } from '@/lib/types'
+import type { AdminUser, UserRole, BudgetCategory, Budget, BudgetSummaryItem } from '@/lib/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
@@ -32,6 +32,78 @@ export const transactionsApi = {
       headers: await authHeaders(),
     })
     return handle<void>(res)
+  },
+}
+
+export const budgetsApi = {
+  async listCategories(): Promise<BudgetCategory[]> {
+    const res = await fetch(`${API_URL}/api/budgets/categories`, {
+      headers: await authHeaders(),
+      cache: 'no-store',
+    })
+    return handle<BudgetCategory[]>(res)
+  },
+
+  async createCategory(input: { name: string; sort_order?: number }): Promise<BudgetCategory> {
+    const res = await fetch(`${API_URL}/api/budgets/categories`, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify(input),
+    })
+    return handle<BudgetCategory>(res)
+  },
+
+  async updateCategory(
+    id: string,
+    input: { name?: string; sort_order?: number }
+  ): Promise<BudgetCategory> {
+    const res = await fetch(`${API_URL}/api/budgets/categories/${id}`, {
+      method: 'PUT',
+      headers: await authHeaders(),
+      body: JSON.stringify(input),
+    })
+    return handle<BudgetCategory>(res)
+  },
+
+  async deleteCategory(id: string): Promise<void> {
+    const res = await fetch(`${API_URL}/api/budgets/categories/${id}`, {
+      method: 'DELETE',
+      headers: await authHeaders(),
+    })
+    return handle<void>(res)
+  },
+
+  async setMapping(categoryId: string, budgetCategoryId: string | null): Promise<unknown> {
+    const res = await fetch(`${API_URL}/api/budgets/mapping`, {
+      method: 'PUT',
+      headers: await authHeaders(),
+      body: JSON.stringify({ category_id: categoryId, budget_category_id: budgetCategoryId }),
+    })
+    return handle<unknown>(res)
+  },
+
+  async upsertBudget(input: {
+    budget_category_id: string
+    period_start: string
+    amount: number
+  }): Promise<Budget> {
+    const res = await fetch(`${API_URL}/api/budgets`, {
+      method: 'PUT',
+      headers: await authHeaders(),
+      body: JSON.stringify(input),
+    })
+    return handle<Budget>(res)
+  },
+
+  async summary(periodStart: string): Promise<BudgetSummaryItem[]> {
+    const res = await fetch(
+      `${API_URL}/api/budgets/summary?period_start=${encodeURIComponent(periodStart)}`,
+      {
+        headers: await authHeaders(),
+        cache: 'no-store',
+      }
+    )
+    return handle<BudgetSummaryItem[]>(res)
   },
 }
 

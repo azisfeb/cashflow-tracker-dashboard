@@ -43,6 +43,25 @@ export function getBillingPeriod(now: Date = new Date()): BillingPeriod {
   return { from: toLocalDateStr(from), to: toLocalDateStr(to), label }
 }
 
+/**
+ * Billing period yang MEMUAT tanggal tertentu (YYYY-MM-DD).
+ * from = tanggal 27, to = tanggal 26 bulan berikutnya.
+ */
+export function getBillingPeriodForDate(dateStr: string): BillingPeriod {
+  const [y, m, d] = dateStr.split('-').map((n) => parseInt(n, 10))
+  const month = m - 1 // 0-indexed
+  let from: Date, to: Date
+  if (d >= 27) {
+    from = new Date(y, month, 27)
+    to = new Date(y, month + 1, 26)
+  } else {
+    from = new Date(y, month - 1, 27)
+    to = new Date(y, month, 26)
+  }
+  const label = `${from.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} – ${to.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`
+  return { from: toLocalDateStr(from), to: toLocalDateStr(to), label }
+}
+
 export interface AnnualBillingRange extends BillingPeriod {
   year: number
 }
