@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getClientOwnerId } from '@/lib/owner'
 import { transactionsApi } from '@/lib/api-client'
@@ -34,13 +34,17 @@ import {
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Loader2, Search, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import type { Transaction, Category } from '@/lib/types'
-import { getBillingPeriod } from '@/lib/billing-period'
+import { getBillingPeriod, getBillingPeriodForDate } from '@/lib/billing-period'
+import { budgetsApi } from '@/lib/api-client'
+import { cn } from '@/lib/utils'
+import type { BudgetSummaryItem } from '@/lib/types'
 import {
   PieChart, Pie, Cell, Tooltip as RechartsTooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
 } from 'recharts'
 import { useNominalVisibility } from '@/components/layout/nominal-visibility-provider'
 import { formatRupiah, formatCompact } from '@/lib/format'
+import { Wallet } from 'lucide-react'
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -87,6 +91,33 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
   const [dateFrom, setDateFrom] = useState(defaultRange.from)
   const [dateTo, setDateTo] = useState(defaultRange.to)
   const supabase = createClient()
+
+  // period_start untuk budget = tanggal 27 dari billing period yang memuat dateFrom
+  const budgetPeriodStart = useMemo(
+    () => (dateFrom ? getBillingPeriodForDate(dateFrom).from : getBillingPeriod().from),
+    [dateFrom]
+  )
+  const [budgetSummary, setBudgetSummary] = useState<BudgetSummaryItem[]>([])
+  const [loadingBudget, setLoadingBudget] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoadingBudget(true)
+    budgetsApi
+      .summary(budgetPeriodStart)
+      .then((data) => {
+        if (!cancelled) setBudgetSummary(data)
+      })
+      .catch(() => {
+        if (!cancelled) setBudgetSummary([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingBudget(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [budgetPeriodStart])
 
   function handlePriceChange(price: string) {
     const qty = parseInt(form.quantity, 10) || 1
@@ -463,6 +494,55 @@ export function TransaksiClient({ initialTransactions, categories }: Props) {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Budgeting — total / terpakai / sisa per kategori induk, ikut periode filter */}
+      {budgetSummary.length > 0 && (
+        <Card className="glass-panel border-border/40">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+              <p className="text-sm font-medium">Anggaran Periode Ini</p>
+              {loadingBudget && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {budgetSummary.map((b) => {
+                const over = b.remaining < 0
+                const pct =
+                  b.budget_amount > 0
+                    ? Math.min(100, Math.round((b.used / b.budget_amount) * 100))
+                    : 0
+                return (
+                  <div
+                    key={b.budget_category_id}
+                    className="rounded-xl border border-border/40 p-3 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium truncate">{b.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatRupiah(b.budget_amount, isHidden)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={cn('h-full rounded-full', over ? 'bg-destructive' : 'bg-primary')}
+                        style={{ width: `${b.budget_amount > 0 ? pct : 0}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">
+                        Terpakai {formatRupiah(b.used, isHidden)}
+                      </span>
+                      <span className={cn(over ? 'text-destructive font-medium' : 'text-green-500')}>
+                        Sisa {formatRupiah(b.remaining, isHidden)}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <Card className="glass-panel border-border/40 overflow-hidden">

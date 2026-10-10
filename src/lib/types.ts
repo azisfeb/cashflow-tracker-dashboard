@@ -30,6 +30,33 @@ export interface Category {
   color: string
   icon?: string | null
   created_at: string
+  budget_category_id?: string | null
+}
+
+export interface BudgetCategory {
+  id: string
+  owner_id?: string
+  name: string
+  sort_order: number
+  created_at: string
+}
+
+export interface Budget {
+  id: string
+  owner_id?: string
+  budget_category_id: string
+  period_start: string
+  amount: number
+  created_at: string
+  updated_at: string
+}
+
+export interface BudgetSummaryItem {
+  budget_category_id: string
+  name: string
+  budget_amount: number
+  used: number
+  remaining: number
 }
 
 export interface Transaction {
